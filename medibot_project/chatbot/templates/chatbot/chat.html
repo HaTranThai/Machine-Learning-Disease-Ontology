@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+<head>
+    <title>Hệ thống vấn đáp y tế - MediBot</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a; /* Nền tối giống Grok */
+            color: #e0e0e0; /* Màu chữ sáng */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbox {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbox h2 {
+            color: #00d4ff; /* Màu tiêu đề giống Grok */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            max-height: 70vh; /* Giới hạn chiều cao tối đa của khung tin nhắn */
+            overflow-y: auto; /* Thêm thanh cuộn dọc khi nội dung vượt quá chiều cao */
+            padding-bottom: 20px;
+            padding-right: 10px; /* Thêm padding để không che thanh cuộn */
+            scrollbar-width: thin; /* Thanh cuộn mảnh hơn */
+            scrollbar-color: #00d4ff #333; /* Màu thanh cuộn */
+        }
+
+        /* Tùy chỉnh thanh cuộn cho trình duyệt Webkit (Chrome, Safari) */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #333;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #00d4ff;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin: 10px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+            word-wrap: break-word; /* Đảm bảo nội dung dài không tràn khung */
+        }
+
+        .user-message .message-content {
+            background-color: #00d4ff; /* Bong bóng người dùng màu xanh */
+            color: #1a1a1a;
+        }
+
+        .bot-message .message-content {
+            background-color: #333; /* Bong bóng bot màu xám tối */
+            color: #e0e0e0;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #252525;
+            border-top: 1px solid #444;
+        }
+
+        .input-row {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 20px;
+            background-color: #333;
+            color: #e0e0e0;
+            outline: none;
+        }
+
+        input[type="text"]::placeholder {
+            color: #888;
+        }
+
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .model-selector label {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        select {
+            padding: 5px 10px;
+            border: 1px solid #444;
+            border-radius: 10px;
+            background-color: #333;
+            color: #e0e0e0;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #00d4ff;
+            border: none;
+            border-radius: 20px;
+            color: #1a1a1a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #00b0d6;
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbox">
+        <h2>MediBot - Hỏi đáp về bệnh</h2>
+        <div class="chat-messages">
+            {% if chat_history %}
+                {% for chat in chat_history %}
+                    <div class="message user-message">
+                        <div class="message-content">{{ chat.user_input }}</div>
+                    </div>
+                    {% if chat.disease %}
+                    <div class="message bot-message">
+                        <div class="message-content"><strong>Bệnh được nhận diện:</strong> {{ chat.disease }}</div>
+                    </div>
+                    {% endif %}
+                    {% if chat.answer %}
+                    <div class="message bot-message">
+                        <div class="message-content"><strong>Bot:</strong><br>{{ chat.answer|safe }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+        <!-- Thanh nhập liệu và chọn model -->
+        <form method="post" class="input-container">
+            {% csrf_token %}
+            <div class="input-row">
+                <input type="text" name="user_input" placeholder="Hỏi về bệnh..." required>
+                <div class="model-selector">
+                    <label for="model_type">Chọn model:</label>
+                    <select name="model_type" id="model_type">
+                        <option value="SVM" {% if selected_model == 'SVM' %}selected{% endif %}>SVM</option>
+                        <option value="RF" {% if selected_model == 'RF' %}selected{% endif %}>Random Forest</option>
+                    </select>
+                </div>
+                <button type="submit">Gửi</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
